@@ -1,6 +1,6 @@
 googlesearch
 ============
-Fork or original project randomizing user-agents for each request.
+Fork of original project randomizing user-agents for each request.
 
 Fork from.
 Google search from Python.
