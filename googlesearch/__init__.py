@@ -140,9 +140,9 @@ def get_page(url, user_agent=None):
     @raise urllib2.HTTPError: An exception is raised on error.
     """
     if user_agent is None:
-        user_agent = USER_AGENT
+        user_agent = get_random_user_agent()
     request = Request(url)
-    request.add_header('User-Agent', USER_AGENT)
+    request.add_header('User-Agent', user_agent)
     cookie_jar.add_cookie_header(request)
     response = urlopen(request)
     cookie_jar.extract_cookies(response, request)
