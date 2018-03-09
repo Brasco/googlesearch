@@ -435,8 +435,8 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
                 results you can set the extra_params to {'filter': '0'} which will
                 append '&filter=0' to every query.
 
-            @rtype:  array
-            @return: array of links
+            @rtype:  list
+            @return: list of links
             """
             # Prepare domain list if it exists.
             if domains:
