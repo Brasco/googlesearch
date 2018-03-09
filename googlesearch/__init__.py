@@ -458,7 +458,7 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
 
             # Prepare the URL of the first request.
 
-            if num == 10:
+            if not num:
                 url = url_apis_customsearch % vars()
             else:
                 url = url_apis_customearch_num % vars()
