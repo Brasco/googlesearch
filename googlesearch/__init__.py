@@ -483,9 +483,11 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
                     response_str = urlopen(url)
                     query_count += 1
                     response_str = response_str.read().decode('utf-8')
+                    print(response_str)
                     response = json.loads(response_str)
                 except HTTPError as e:
                     response_str = e.read().decode('utf-8')
+                    print(response_str)
                     response = json.loads(response_str)
                     if "Invalid Value" in response['error']['message']:
                         sys.exit(0)
