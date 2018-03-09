@@ -86,10 +86,9 @@ url_next_page_num = "https://www.google.%(tld)s/search?hl=%(lang)s&" \
                     "q=%(query)s&num=%(num)d&start=%(start)d&tbs=%(tbs)s&" \
                     "safe=%(safe)s&tbm=%(tpe)s"
 url_apis_customsearch = "https://www.googleapis.com/customsearch/v1?q=%(query)s&" \
-                           "&lr=%(lang)s&tbs=%(tbs)s&safe=%(safe)s&tbm=%(tpe)s"
-url_apis_customearch_num = "https://www.googleapis.com/customsearch/v1?q=%(query)s&" \
-                           "num=%(num)d&lr=%(lang)s&tbs=%(tbs)s&safe=%(safe)s&" \
-                           "tbm=%(tpe)s"
+                           "&key=%(key)s&cx=%(cx)s&alt=json"
+url_apis_customearch_num = "https://www.googleapis.com/customsearch/v1?num=%(num)d&q=%(query)s&" \
+                           "&key=%(key)s&cx=%(cx)s&alt=json"
 sleep = 120
 max_queries = 10
 
@@ -414,9 +413,7 @@ def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
 
 
 # Returns an array with the URLs.
-def apis_customsearch(query, tld='com', lang='lang_en', tbs='0', safe='off', num=10, start=0,
-                   stop=None, domains=None, pause=2.0, only_standard=False,
-                   extra_params={}, tpe='', user_agent=None):
+def apis_customsearch(query, key, cx, num, domains, extra_params={}):
             """
             Search the given query string using Google.
 
