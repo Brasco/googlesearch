@@ -413,49 +413,21 @@ def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
 
 
 # Returns an array with the URLs.
-def apis_customsearch(query, key, cx, num, domains, extra_params={}):
+def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
             """
             Search the given query string using Google.
 
             @type  query: str
             @param query: Query string. Must NOT be url-encoded.
 
-            @type  tld: str
-            @param tld: Top level domain.
+            @type  key: str
+            @param tld: google apis key.
 
-            @type  lang: str
-            @param lang: Language.
-
-            @type  tbs: str
-            @param tbs: Time limits (i.e "qdr:h" => last hour,
-                "qdr:d" => last 24 hours, "qdr:m" => last month).
-
-            @type  safe: str
-            @param safe: Safe search.
-
-            @type  num: int
-            @param num: Number of results per page.
-
-            @type  start: int
-            @param start: First result to retrieve.
-
-            @type  stop: int
-            @param stop: Last result to retrieve.
-                    Use C{None} to keep searching forever.
+            @type  cx: str
+            @param lang: unique id.
 
             @type  domains: list
             @param domains: A list of web domains to constrain the search.
-
-            @type  pause: float
-            @param pause: Lapse to wait between HTTP requests.
-                A lapse too long will make the search slow, but a lapse too short may
-                cause Google to block your IP. Your mileage may vary!
-
-            @type  only_standard: bool
-            @param only_standard: If C{True}, only returns the standard results from
-                each page. If C{False}, it returns every possible link from each page,
-                except for those that point back to Google itself. Defaults to C{False}
-                for backwards compatibility with older versions of this module.
 
             @type  extra_params: dict
             @param extra_params: A dictionary of extra HTTP GET parameters, which must
@@ -463,19 +435,8 @@ def apis_customsearch(query, key, cx, num, domains, extra_params={}):
                 results you can set the extra_params to {'filter': '0'} which will
                 append '&filter=0' to every query.
 
-            @type  tpe: str
-            @param tpe: Search type (images, videos, news, shopping, books, apps)
-                    Use the following values {videos: 'vid', images: 'isch',
-                                              news: 'nws', shopping: 'shop',
-                                              books: 'bks', applications: 'app'}
-
-            @type  user_agent: str
-            @param user_agent: User agent for the HTTP requests. Use C{None} for the
-                default.
-
-            @rtype:  generator
-            @return: Generator (iterator) that yields found URLs. If the C{stop}
-                parameter is C{None} the iterator will loop forever.
+            @rtype:  array
+            @return: array of links
             """
             # Prepare domain list if it exists.
             if domains:
