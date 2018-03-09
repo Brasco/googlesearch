@@ -53,15 +53,17 @@ import random
 import sys
 import time
 import math
+import json
 
 if sys.version_info[0] > 2:
     from http.cookiejar import LWPCookieJar
     from urllib.request import Request, urlopen
     from urllib.parse import quote_plus, urlparse, parse_qs
+    from urllib.error import HTTPError
 else:
     from cookielib import LWPCookieJar
     from urllib import quote_plus
-    from urllib2 import Request, urlopen
+    from urllib2 import Request, urlopen, HTTPError
     from urlparse import urlparse, parse_qs
 
 try:
@@ -83,6 +85,13 @@ url_search_num = "https://www.google.%(tld)s/search?hl=%(lang)s&q=%(query)s&" \
 url_next_page_num = "https://www.google.%(tld)s/search?hl=%(lang)s&" \
                     "q=%(query)s&num=%(num)d&start=%(start)d&tbs=%(tbs)s&" \
                     "safe=%(safe)s&tbm=%(tpe)s"
+url_apis_customsearch = "https://www.googleapis.com/customsearch/v1?q=%(query)s&" \
+                           "&lr=%(lang)s&tbs=%(tbs)s&safe=%(safe)s&tbm=%(tpe)s"
+url_apis_customearch_num = "https://www.googleapis.com/customsearch/v1?q=%(query)s&" \
+                           "num=%(num)d&lr=%(lang)s&tbs=%(tbs)s&safe=%(safe)s&" \
+                           "tbm=%(tpe)s"
+sleep = 120
+max_queries = 10
 
 # Cookie jar. Stored at the user's home folder.
 home_folder = os.getenv('HOME')
@@ -402,6 +411,159 @@ def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
             url = url_next_page % vars()
         else:
             url = url_next_page_num % vars()
+
+
+# Returns a generator that yields URLs.
+def apis_customsearch(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
+                   stop=None, domains=None, pause=2.0, only_standard=False,
+                   extra_params={}, tpe='', user_agent=None):
+            """
+            Search the given query string using Google.
+
+            @type  query: str
+            @param query: Query string. Must NOT be url-encoded.
+
+            @type  tld: str
+            @param tld: Top level domain.
+
+            @type  lang: str
+            @param lang: Language.
+
+            @type  tbs: str
+            @param tbs: Time limits (i.e "qdr:h" => last hour,
+                "qdr:d" => last 24 hours, "qdr:m" => last month).
+
+            @type  safe: str
+            @param safe: Safe search.
+
+            @type  num: int
+            @param num: Number of results per page.
+
+            @type  start: int
+            @param start: First result to retrieve.
+
+            @type  stop: int
+            @param stop: Last result to retrieve.
+                    Use C{None} to keep searching forever.
+
+            @type  domains: list
+            @param domains: A list of web domains to constrain the search.
+
+            @type  pause: float
+            @param pause: Lapse to wait between HTTP requests.
+                A lapse too long will make the search slow, but a lapse too short may
+                cause Google to block your IP. Your mileage may vary!
+
+            @type  only_standard: bool
+            @param only_standard: If C{True}, only returns the standard results from
+                each page. If C{False}, it returns every possible link from each page,
+                except for those that point back to Google itself. Defaults to C{False}
+                for backwards compatibility with older versions of this module.
+
+            @type  extra_params: dict
+            @param extra_params: A dictionary of extra HTTP GET parameters, which must
+                be URL encoded. For example if you don't want google to filter similar
+                results you can set the extra_params to {'filter': '0'} which will
+                append '&filter=0' to every query.
+
+            @type  tpe: str
+            @param tpe: Search type (images, videos, news, shopping, books, apps)
+                    Use the following values {videos: 'vid', images: 'isch',
+                                              news: 'nws', shopping: 'shop',
+                                              books: 'bks', applications: 'app'}
+
+            @type  user_agent: str
+            @param user_agent: User agent for the HTTP requests. Use C{None} for the
+                default.
+
+            @rtype:  generator
+            @return: Generator (iterator) that yields found URLs. If the C{stop}
+                parameter is C{None} the iterator will loop forever.
+            """
+            # Prepare domain list if it exists.
+            if domains:
+                domain_query = '+OR+'.join('site:' + domain for domain in domains)
+            else:
+                domain_query = ''
+
+            # Prepare the search string.
+            query = quote_plus(query + '+' + domain_query)
+
+            # Check extra_params for overlapping
+            for builtin_param in ('lr', 'q', 'tbs', 'safe', 'tbm'):
+                if builtin_param in extra_params.keys():
+                    raise ValueError(
+                        'GET parameter "%s" is overlapping with \
+                        the built-in GET parameter',
+                        builtin_param
+                    )
+
+            # Prepare the URL of the first request.
+
+            if num == 10:
+                url = url_apis_customsearch % vars()
+            else:
+                url = url_apis_customearch_num % vars()
+
+            try:  # Is it python<3?
+                iter_extra_params = extra_params.iteritems()
+            except AttributeError:  # Or python>3?
+                iter_extra_params = extra_params.items()
+            # Append extra GET_parameters to URL
+            for k, v in iter_extra_params:
+                url += url + ('&%s=%s' % (k, v))
+
+            query_count = 0
+            data = {'q': query}
+            data_saved = data['q']
+            found = 0
+            pages = set()
+            query_max_reached = False
+            links = []
+            while query_count < max_queries:
+                try:
+                    response_str = urlopen(url)
+                    query_count += 1
+                    response_str = response_str.read().decode('utf-8')
+                    response = json.loads(response_str)
+                except HTTPError as e:
+                    response_str = e.read().decode('utf-8')
+                    response = json.loads(response_str)
+                    if "Invalid Value" in response['error']['message']:
+                        sys.exit(0)
+                    elif response['error']['code'] == 500:
+                        data['q'] = data_saved
+                        query_max_reached = True
+                        continue
+                    print("error: " + str(response['error']['code']) + " - " + str(response['error']['message']),
+                          file=sys.stderr)
+                    for error in response['error']['errors']:
+                        print(error['domain'] + "::" + error['reason'] + "::" + error['message'], file=sys.stderr)
+                    if "User Rate Limit Exceeded" in response['error']['message']:
+                        print("sleeping " + str(sleep) + " seconds", file=sys.stderr)
+                        time.sleep(5)
+                    elif sleep and "Daily Limit Exceeded" in response['error']['message']:
+                        print("sleeping " + str(sleep) + " seconds", file=sys.stderr)
+                        time.sleep(sleep)
+                        continue
+                    else:
+                        sys.exit(1)
+                data_saved = data['q']
+                for request in response['queries']['request']:
+                    if int(request['totalResults']) == 0:
+                        sys.exit(0)
+                for item in response['items']:
+                    item_url = urlparse(item['link'])
+                    if item_url.path in pages:
+                        if not query_max_reached:
+                            data['q'] += " -inurl:" + item_url.path
+                    else:
+                        pages.add(item_url.path)
+                        found += 1
+                        links.append(item['link'])
+                if found >= data['num'] or query_max_reached:
+                    data['start'] += data['num']
+            return links
 
 
 # Returns only the number of Google hits for the given search query.
