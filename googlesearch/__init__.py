@@ -413,8 +413,8 @@ def search(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
             url = url_next_page_num % vars()
 
 
-# Returns a generator that yields URLs.
-def apis_customsearch(query, tld='com', lang='en', tbs='0', safe='off', num=10, start=0,
+# Returns an array with the URLs.
+def apis_customsearch(query, tld='com', lang='lang_en', tbs='0', safe='off', num=10, start=0,
                    stop=None, domains=None, pause=2.0, only_standard=False,
                    extra_params={}, tpe='', user_agent=None):
             """
