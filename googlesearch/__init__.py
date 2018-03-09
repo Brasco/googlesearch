@@ -481,6 +481,7 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
             while query_count < max_queries:
                 try:
                     response_str = urlopen(url)
+                    print(url)
                     query_count += 1
                     response_str = response_str.read().decode('utf-8')
                     print(response_str)
