@@ -476,7 +476,7 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
             found = 0
             pages = set()
             query_max_reached = False
-            start_index = 0
+            start_index = 1
             links = []
             while not query_max_reached:
                 try:
