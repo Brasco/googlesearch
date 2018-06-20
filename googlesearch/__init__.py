@@ -445,7 +445,8 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
                 domain_query = ''
 
             # Prepare the search string.
-            query = quote_plus(query + '+' + domain_query)
+            if domain_query:
+                query = quote_plus(query + '+' + domain_query)
 
             # Check extra_params for overlapping
             for builtin_param in ('lr', 'q', 'tbs', 'safe', 'tbm'):
@@ -470,18 +471,17 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
             # Append extra GET_parameters to URL
             for k, v in iter_extra_params:
                 url += url + ('&%s=%s' % (k, v))
+            url += "&fields=queries(nextPage(startIndex)),items(link)"
 
-            query_count = 0
-            data = {'q': query}
-            data_saved = data['q']
             found = 0
             pages = set()
             query_max_reached = False
+            start_index = 0
             links = []
-            while query_count < max_queries:
+            while not query_max_reached:
                 try:
+                    url += "&start={0}".format(start_index)
                     response_str = urlopen(url)
-                    query_count += 1
                     response_str = response_str.read().decode('utf-8')
                     response = json.loads(response_str)
                 except HTTPError as e:
@@ -490,7 +490,6 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
                     if "Invalid Value" in response['error']['message']:
                         sys.exit(0)
                     elif response['error']['code'] == 500:
-                        data['q'] = data_saved
                         query_max_reached = True
                         continue
                     print("error: " + str(response['error']['code']) + " - " + str(response['error']['message']),
@@ -506,19 +505,20 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
                         continue
                     else:
                         sys.exit(1)
-                data_saved = data['q']
-                for request in response['queries']['request']:
-                    if int(request['totalResults']) == 0:
-                        sys.exit(0)
+
                 for item in response['items']:
                     item_url = urlparse(item['link'])
-                    if item_url.path in pages:
-                        if not query_max_reached:
-                            data['q'] += " -inurl:" + item_url.path
-                    else:
+                    if item_url.path not in pages:
                         pages.add(item_url.path)
                         found += 1
                         links.append(item['link'])
+                try:
+                    start_index = response["queries"]["nextPage"][0]["startIndex"]
+                except KeyError:
+                    query_max_reached = True
+                except IndexError:
+                    query_max_reached = True
+
             return links
 
 
