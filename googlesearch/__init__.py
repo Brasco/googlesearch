@@ -480,8 +480,8 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
             links = []
             while not query_max_reached:
                 try:
-                    url += "&start={0}".format(start_index)
-                    response_str = urlopen(url)
+                    urla = url + "&start={0}".format(start_index)
+                    response_str = urlopen(urla)
                     response_str = response_str.read().decode('utf-8')
                     response = json.loads(response_str)
                 except HTTPError as e:
