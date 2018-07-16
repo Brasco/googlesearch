@@ -508,8 +508,8 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
 
                 for item in response['items']:
                     item_url = urlparse(item['link'])
-                    if item_url.path not in pages:
-                        pages.add(item_url.path)
+                    if item_url.netloc not in pages:
+                        pages.add(item_url.netloc)
                         found += 1
                         links.append(item['link'])
                 try:
