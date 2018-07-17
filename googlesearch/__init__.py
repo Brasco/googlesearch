@@ -508,7 +508,7 @@ def apis_customsearch(query, key, cx, num=None, domains=None, extra_params={}):
                         time.sleep(sleep)
                         continue
                     else:
-                        sys.exit(1)
+                        raise InvalidValue
 
                 try:
                     for item in response['items']:
